@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# pyenv
+.python-version
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+celery-worker-dasolution.log
+
+# 추가...
+
+
+# 로컬 개발 관련 폴더
+/_sample_data
+/result
+/nohup.out
