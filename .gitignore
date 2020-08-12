@@ -15,9 +15,9 @@ celerybeat.pid
 celery-worker-dasolution.log
 
 # 추가...
+/parking/model
 
 
 # 로컬 개발 관련 폴더
-/_sample_data
-/result
 /nohup.out
+parking-congestion-prediction-master/
