@@ -21,3 +21,4 @@ celery-worker-dasolution.log
 # 로컬 개발 관련 폴더
 /nohup.out
 parking-congestion-prediction-master/
+sample_code/
