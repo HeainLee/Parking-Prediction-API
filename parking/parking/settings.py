@@ -146,3 +146,51 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# 로그 레벨: DEBUG < INFO < WARNING < ERROR < CRITICAL
+LOGGING = {
+    'version':1,
+    'disable_existing_loggers':False,
+    
+    'formatters': {
+        'format1': {
+            'format': '[%(asctime)s | %(levelname)s] %(module)s(%(lineno)sline) - %(name)s : %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+            },
+        'format2': {
+            'format': '[%(asctime)s %(levelname)s] %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+            }
+        },
+
+    'handlers': {
+        'main_console':{
+            'level':'INFO',
+            'class':'logging.StreamHandler',
+            'formatter': 'format2',
+        },
+        'sub_console':{
+            'level':'INFO',
+            'class':'logging.StreamHandler',
+            'formatter': 'format1',
+        },
+        'file': {
+            # maxBytes * backupCount 용량 이상의 로그가 쌓일경우, 오래된 것부터 삭제
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log/logfile.log'), # 로그 저장할 파일명
+            'maxBytes': 1024 * 1024 * 10,   # 로그 파일 당 10M 까지
+            'backupCount': 10,              # 로그 파일을 최대 10개까지 유지
+            'formatter': 'format2',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['main_console'],
+            'level': 'INFO',
+            'propagate': True
+        },
+        'collect_log': {'level':'DEBUG', 'handlers': ['sub_console', 'file']},
+        # 'collect_log_helper': {'level':'DEBUG', 'handlers': ['sub_console', 'file'], 'propagate':0},
+    }
+}

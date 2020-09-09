@@ -33,33 +33,53 @@ def model_batch_function_edit(model_id):
     print("상태:", response.status_code)
 
 class ParkingModelView(APIView):
-    # 주차장 모델 생설 결과 조회 
+    # 주차장 모델 생성 결과 조회 
     def get(self, request):
         try:
-            query_key = ["dirname", "filename"]
-            # TODO 경로 변경 
-            model_path = "/Users/heain/parking_prediction_api/parking/model"
+            if request.GET.get('p_id', False):
+                p_id = request.GET['p_id']
+                filename = request.GET['filename']
+                model_path = "/Users/heain/parking_prediction_api/parking/model"
 
-            result_ = {}
-            result_["path"] = str
-            result_['result'] = []
-            get_infos = {}
-            for dirpath, dirnames, filenames in os.walk(model_path):
-                print("dirpath:", dirpath)
-                # dirnames.sort()
+                if filename.endswith('.txt'):
+                    load_path = os.path.join(model_path, str(p_id), filename)
+                    with open(load_path, 'r', encoding='UTF-8') as f:
+                        get_info=json.loads(f.read())
+                    model_info = dict(model_info=get_info)
 
-                if dirpath == model_path:
-                    result_['path'] = dirpath
-                    # get_dir = dirnames # ['1', '2',....]
-                else:
-                    get_info = {}
-                    dir_name = os.path.split(dirpath)[1]
-                    get_info['files'] = filenames
-                    get_infos[dir_name] = get_info
+                    final_result = {}
+                    final_result['path'] = load_path
+                    final_result['result'] = model_info
+                    return Response(final_result, status=status.HTTP_200_OK)
 
-            # get_infos = sorted(get_infos.items())
-            result_['result'] = get_infos
-            return Response(result_, status=status.HTTP_200_OK)
+                elif filename.endswith('.model'):
+                    return Response('모델조회불가', status=status.HTTP_400_BAD_REQUEST)
+                    
+            else:
+                query_key = ["dirname", "filename"]
+                # TODO 경로 변경 
+                model_path = "/Users/heain/parking_prediction_api/parking/model"
+
+                result_ = {}
+                result_["path"] = str
+                result_['result'] = []
+                get_infos = {}
+                for dirpath, dirnames, filenames in os.walk(model_path):
+                    print("dirpath:", dirpath)
+                    # dirnames.sort()
+
+                    if dirpath == model_path:
+                        result_['path'] = dirpath
+                        # get_dir = dirnames # ['1', '2',....]
+                    else:
+                        get_info = {}
+                        dir_name = os.path.split(dirpath)[1]
+                        get_info['files'] = filenames
+                        get_infos[dir_name] = get_info
+
+                # get_infos = sorted(get_infos.items())
+                result_['result'] = get_infos
+                return Response(result_, status=status.HTTP_200_OK)
 
         except FileNotFoundError as e:
             error_return = {}
@@ -77,74 +97,15 @@ class ParkingModelView(APIView):
     def post(self, request):
         # 모델 생성하고 결과 반환
         # TODO 모델 생성 클래스 
-        # result = parking_model()
+        result = parking_model()
         result = True
         if result:
-            return Response('모델이 생성되었습니다.', status=status.HTTP_200_OK)
+            return Response('모델이 생성을 요청했습니다.', status=status.HTTP_200_OK)
         else:
-            return Response('모델 생성 실패했습니다.', status=status.HTTP_400_BAD_REQUEST)
+            return Response('모델 생성에 실패했습니다.', status=status.HTTP_400_BAD_REQUEST)
 
 
 class ParkingModelDetailView(APIView):
-
-    def get(self, request, pk):
-        print('모델 개별 조회')
-        model_path = "/Users/heain/parking_prediction_api/parking/model"
-        model_dir = [i for i in os.listdir(model_path) if not '.' in i ]
-        model_dir.sort()
-        print(model_dir)
-        if pk in model_dir:
-
-            def _case_get_info(path):
-                mtime = _convert_date(os.path.getmtime(path))
-                ctime = _convert_date(os.path.getctime(path))
-                stsize = os.path.getsize(path)
-                return mtime, ctime, stsize
-
-            def _convert_date(timestamp):
-                date_obj = datetime.fromtimestamp(timestamp)
-                return date_obj
-
-            model_path = model_path + "/" + str(pk)
-            files = os.listdir(model_path)
-            # ['parkingLot_2.model', 'parkingLot_1.model']
-            model_files = [file for file in files if '.model' in file]
-            # ['parkingLot_1.txt', 'parkingLot_2.txt']
-            model_infos = [file for file in files if '.txt' in file]
-            print(model_files, model_infos)
-            # mtime, ctime, stsize = _case_get_info(model_path)
-
-            return_info = []
-            for model in model_files:
-                model_info = {}
-                model_name = model.split('.model')[0]
-                print(model_name) # parkingLot_2
-                for info in model_infos:
-                    print(info)
-                    if model_name in info:
-                        load_path = os.path.join(model_path,info)
-                        with open(load_path, 'r', encoding='UTF-8') as f:
-                            get_info=json.loads(f.read())
-
-
-                model_info['model_name'] = model
-                model_info['model_info'] = get_info
-                return_info.append(model_info)
-
-            final_result = {}
-            final_result['path'] = model_path
-            final_result['result'] = return_info
-            # file_info={}
-            # file_info["createdAt"] = mtime
-            # file_info["modifiedAt"] = ctime
-            # file_info["filesize"] = stsize
-            return Response(final_result, status=status.HTTP_200_OK)
-
-        else:
-            error_return = dict(error=404, 
-                                message=f"Model '{pk}' Not Found")
-            return Response(error_return, 
-                status=status.HTTP_404_NOT_FOUND)
 
     def patch(self, request, pk):
         from apscheduler.jobstores.base import ConflictingIdError
@@ -152,7 +113,7 @@ class ParkingModelDetailView(APIView):
 
         """
         모델 배치 돌리는 방법 : patch 메소드로 pk에 해당하는 모델 배치로 실행시키기 
-        + 옵션 0 : 배치상태 : start, stop, status 택 1
+        + 옵션 0 : 배치상태 : start, stop, get 택 1
         + 옵션 1 : 실행주기 : minutes 설정 start_data 설정 end_date 설정
         + 옵션 2 : 실행방식 : start / stop (status는 get 메소드로 대신함)
         """

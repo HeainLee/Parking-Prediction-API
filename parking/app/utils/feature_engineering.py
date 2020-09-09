@@ -1,83 +1,67 @@
+import datetime
+import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from pandas.api.types import CategoricalDtype
 
+WEEKS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+HOURS = [x for x in range(1, 25)]
 
-WEEK_DICT = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
-EMPTY = ['', None]
+def data_standard_scaling(data_set, cols):
+    SCALER = StandardScaler()
+    scaled_data = SCALER.fit_transform(data_set[cols].astype(float))
+    data_set[cols] = scaled_data
+    return data_set
 
+def convert_binary_vector(data_set, cols):
 
-def convert_binary_vector(data_set):
-	
-	def _one_hot_encoding(len_, idx_):
-		encoded = ['0'] * len_
-		encoded[idx_] = '1'
-		return ','.join(encoded)
+    def _one_hot_encoding(data_set, col):
+        df_convert = pd.concat([data_set,
+            pd.get_dummies(data_set[str(col)], prefix=str(col))], 
+            axis=1
+            )
+        df_convert.drop([str(col)],axis=1, inplace=True)
+        return df_convert
 
-	day_of_weeks, times, airs, conditions = [], [], [], [] 
-	for i, row in data_set.iterrows():
-		# day of week : convert 7 categories to one-hot encoding
-		day_of_week = row.day_of_week
-		week_idx = WEEK_DICT.index(day_of_week.lower())
-		week_len = len(WEEK_DICT)
-		week_encoded = _one_hot_encoding(week_len, week_idx)
-		day_of_weeks.append(week_encoded)
+    for col in cols:       
+        data_set = _one_hot_encoding(data_set, col)        
+    return data_set
 
-		# time : convert 24 categories to one-hot encoding
-		time_idx = int(row.time)
-		time_len = 24
-		time_encoded = _one_hot_encoding(time_len, time_idx)	
-		times.append(time_encoded)
-		
-		# air_index : convert 4 categories to one-hot encoding
-		if row.air_index not in EMPTY:
-			air_idx = int(row.air_index)-1
-			air_len = 4
-			air_encoded = _one_hot_encoding(air_len, air_idx)
-			airs.append(air_encoded)
-		else:
-			airs.append("")
-		
-		# condition : convert 4 categories to one-hot encoding
-		if row.condition not in EMPTY:
-			con_idx = int(row.condition)-1
-			con_len = 4
-			con_encoded = _one_hot_encoding(con_len, con_idx)	
-			conditions.append(con_encoded)	
-		else:
-			conditions.append("")
+def convert_datetime(data_set):
+    # datetime 컬럼을 요일/시간으로 변환
+    try:
+        data_set['weekday'] = data_set.dateTime.apply(lambda \
+            x: datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S").date().strftime('%A'))
+        data_set['hour'] = data_set.dateTime.apply(lambda \
+            x: datetime.datetime.strptime(x, "%Y-%m-%d %H:%M:%S").hour)
+    except:
+        data_set['weekday'] = data_set.dateTime.apply(lambda x: x.date().strftime('%A'))
+        data_set['hour'] = data_set.dateTime.apply(lambda x: x.hour)
 
-	data_set['day_of_week'] = day_of_weeks
-	data_set['time'] = times
-	data_set['air_index'] = airs
-	data_set['condition'] = conditions
+    data_set.drop([str('dateTime')], axis=1, inplace=True)
+    
+    # 요일을 원핫인코딩 변환
+    try:
+        cat_type = CategoricalDtype(categories=WEEKS, ordered=True)
+        data_set['weekday'] = data_set['weekday'].astype(cat_type)
+    except:
+        data_set["weekday"] = data_set.weekday.astype('category', categories=WEEKS)
+    data_set = pd.concat([data_set, 
+        pd.get_dummies(data_set["weekday"], prefix='weekday')], 
+        axis=1
+        )
+    data_set.drop([str('weekday')], axis=1, inplace=True)
 
-	return data_set
+    # 시간을 원핫인코딩으로 변환
+    try:
+        cat_type = CategoricalDtype(categories=HOURS, ordered=True)
+        data_set['hour'] = data_set['hour'].astype(cat_type)
+    except:
+        data_set["hour"] = data_set.hour.astype('hour', categories=WEEKS)
+    data_set = pd.concat([data_set, 
+        pd.get_dummies(data_set["hour"], prefix='hour')], 
+        axis=1
+        )
+    data_set.drop([str('hour')], axis=1, inplace=True)
 
-
-SCALER = StandardScaler()
-TRAIN_COLS = ['pm10', 'pm25', 'temp', 'rainfall', 'hour_rainfall']
-
-
-def train_standard_scaling(train_set):
-	scaled_data = SCALER.fit_transform(train_set[TRAIN_COLS].astype(float))
-	train_set[TRAIN_COLS] = scaled_data
-	return train_set
-
-
-TEST_CASE1_COLS = ['pm10', 'pm25', 'temp', 'rainfall', 'hour_rainfall']
-TEST_CASE2_COLS = ['temp', 'rainfall', 'hour_rainfall']
-
-
-def test_standard_scaling(test_set, case):
-	if case == 1:
-		test_cols = TEST_CASE1_COLS
-	elif case == 2:
-		test_cols = TEST_CASE2_COLS
-	elif case == 3:
-		return test_set
-	else:
-		raise StopIteration("Error in value of case")
-	scaled_data = SCALER.fit_transform(test_set[test_cols].astype(float))
-	test_set[test_cols] = scaled_data
-	return test_set
-
+    return data_set
 

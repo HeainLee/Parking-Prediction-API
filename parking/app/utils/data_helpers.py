@@ -5,97 +5,39 @@ import joblib
 from os_utils import path_join
 
 
-# 추후 수정 : 파일 읽기에서 API 호출로 변경
-def load_train_set(path_):
-    with open(path_) as f:
-        lines = f.readlines()
-        temp = []
-        for l in lines[1:]:
-            items = l.strip().split('\t')
-            temp.append(items)
-        train_set = pd.DataFrame(temp, columns=[
-            'p_id', 'date',
-            'day_of_week', 'time',
-            'pm10', 'pm25', 'air_index',
-            'temp', 'rainfall', 'hour_rainfall', 'condition',
-            'num_of_parking'])
-        return train_set
-
-
-# 추후 수정 : 파일 읽기에서 API 호출로 변경
-def load_test_set(path_):
-    with open(path_) as f:
-        lines = f.readlines()
-        temp = []
-        for l in lines[1:]:
-            items = l.strip().split('\t')
-            temp.append(items)
-        test_set = pd.DataFrame(temp, columns=[
-            'p_id', 'date', 'day_of_week', 'time', 'pm10', 'pm25', 'air_index',
-            'temp', 'rainfall', 'hour_rainfall', 'condition'
-            ])
-        test_set["id"] = test_set.index.tolist()
-        return test_set
-
-
-def generate_case(data_set, case):
-    if case == 1:
-        return data_set
-    elif case == 2:
-        return data_set.drop(['pm10', 'pm25', 'air_index'], axis=1)
-    elif case == 3:
-        return data_set.drop([
-            'pm10', 'pm25', 'air_index',
-            'temp', 'rainfall', 'hour_rainfall', 'condition'], axis=1)
-    else:
-        raise StopIteration("Error in value of case")
-
-
-def classify_case(data_set, case):
-    if case == 1:
-        _data_set = data_set.dropna(subset=["air_index", "condition"])
-        _data_set = _data_set[(_data_set["air_index"] != "") & (_data_set["condition"] != "")]
-    elif case == 2:
-        _data_set = data_set.dropna(subset=["condition"])
-        _data_set = data_set[(_data_set["air_index"] == "") & (_data_set["condition"] != "")]
-    elif case == 3:
-        _data_set = data_set[(data_set["air_index"] == "") & (data_set["condition"] == "")]
-    else:
-        raise StopIteration("Error in value of case")
-    return _data_set
-
-
 def generate_train_data(data_set, p_id):
-    data_set = data_set.drop(['date'], axis=1)
-    data_set = data_set[data_set['p_id'] == p_id]
-    X = [','.join(map(str, tup)).split(',') for tup in data_set.drop(['p_id', 'num_of_parking'], axis=1).values]
-    y = map(int, data_set.num_of_parking.values.tolist())
+    data_set = data_set[data_set['id'] == p_id]
+    y = data_set['availableSpotNumber'].values
+    X = data_set.drop(['availableSpotNumber', 'totalSpotNumber', 'id'], axis=1)
     return X, y
 
-
-def generate_test_data(data_set, p_id):
-    data_set = data_set.drop(['date'], axis=1)
-    data_set = data_set[data_set['p_id'] == p_id]
-    X_id = data_set.id.tolist()
-    data_set = data_set.drop(["id"], axis=1)
-    X = [','.join(map(str, tup)).split(',') for tup in data_set.drop(['p_id'], axis=1).values]
-    return X, X_id
-
+# def generate_test_data(data_set, p_id):
+#     data_set = data_set.drop(['date'], axis=1)
+#     data_set = data_set[data_set['p_id'] == p_id]
+#     X_id = data_set.id.tolist()
+#     data_set = data_set.drop(["id"], axis=1)
+#     X = [','.join(map(str, tup)).split(',') for tup in data_set.drop(['p_id'], axis=1).values]
+#     return X, X_id
 
 def save_estimator(estimator, path_):
     joblib.dump(estimator, path_)
 
-def save_estimator_info(estimator, data, path_, filename_):
+def save_estimator_info(estimator, data, path_, filename_, score_=None, params_=None):
     filename = filename_ + '.txt'
-    cv_ = [0.8, 0.85, 0.83323]
-    results = dict(model_name = type(estimator).__name__,
+    # cv_ = [0.8, 0.85, 0.83323]
+    
+    if type(estimator).__name__ == 'GridSearchCV':
+        model_name = type(estimator.estimator).__name__
+    else:
+        model_name = type(estimator).__name__
+    results = dict(model_name = model_name,
                    columns_name = data.columns.tolist(),
-                   cv_score = [round(score, 2) for score in cv_]
+                   # best_score = [round(score, 2) for score in score_],
+                   best_score = score_,
+                   best_param = str(params_)
                   )
-    # str_list = [f"{type(estimator).__name__}\n", f"{data.columns.tolist()}\n", "cross_validation_score"]
-    # with open(path_join([path_, filename]), 'w') as f:
-    #     f.writelines(str_list)
-    with open(path_join([path_, filename]), 'w') as f:
+
+    with open(path_join([path_, filename]), 'w', encoding='utf-8') as f:
         f.write(json.dumps(results))
 
 
