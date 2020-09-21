@@ -11,16 +11,18 @@ def generate_train_data(data_set, p_id):
     X = data_set.drop(['availableSpotNumber', 'totalSpotNumber', 'id'], axis=1)
     return X, y
 
-# def generate_test_data(data_set, p_id):
-#     data_set = data_set.drop(['date'], axis=1)
-#     data_set = data_set[data_set['p_id'] == p_id]
-#     X_id = data_set.id.tolist()
-#     data_set = data_set.drop(["id"], axis=1)
-#     X = [','.join(map(str, tup)).split(',') for tup in data_set.drop(['p_id'], axis=1).values]
-#     return X, X_id
+
+def generate_test_data(data_set, p_id):
+    data_set = data_set[data_set['id'] == p_id]
+    # TODO X 컬럼 선택하는 방법 수정..
+    total_spot_num = data_set['totalSpotNumber']
+    X = data_set.drop(['availableSpotNumber', 'totalSpotNumber', 'id'], axis=1)    
+    return X, total_spot_num.values[0]
+
 
 def save_estimator(estimator, path_):
     joblib.dump(estimator, path_)
+
 
 def save_estimator_info(estimator, data, path_, filename_, score_=None, params_=None):
     filename = filename_ + '.txt'
@@ -41,14 +43,14 @@ def save_estimator_info(estimator, data, path_, filename_, score_=None, params_=
         f.write(json.dumps(results))
 
 
-def load_estimator(estimator, case, p_id):
-    path_ = os.path.join('model', estimator)
+def load_estimator(estimator, p_id):
+    path_ = os.path.join('model', str(p_id))
     model_list = os.listdir(path_)
-    model = [m for m in model_list if ('case'+case in m) and (p_id in m)]
+    model = [m for m in model_list if '.model' in m and estimator in m]
     if len(model) != 1:
-        raise StopIteration("Error in value of case")
+        raise StopIteration("Error in value of model")
     path_ = os.path.join(path_, model[0])
-    return joblib.load(path_), model[0]
+    return joblib.load(path_)
 
 
 def output(data_set, y_pred, estimator, model_name):

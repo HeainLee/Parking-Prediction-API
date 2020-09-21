@@ -25,69 +25,70 @@ def _print_train_info(data_set):
     logger.debug('y : {}'.format(columns_[-1]))
 
 
-def train_process():
-    # 학습용 데이터 로드
-    
-    # TODO : data_path 수정
-    data_path = '/Users/heain/parking_prediction_api/train_data.json'
-    train_set = pd.read_json(data_path)
-    logger.info('Shape of total train set : {}'.format(train_set.shape))
+def train_process(data_path):
+    try:    
+        # data_path = '/Users/heain/parking_prediction_api/train_data.json'
+        train_set = pd.read_json(data_path)
+        logger.info('Shape of total train set : {}'.format(train_set.shape))
 
-    # 데이터 전처리 - NUMS / CATS
-    NUM_COLS = ['temperature', 'windSpeed', 'humidity', 'hourlyRainfall']
-    CAT_COLS = ['weatherType', 'isHoliday']
-    # EXC_COLS = ['availableSpotNumber', 'totalSpotNumber']
+        # 데이터 전처리 - NUMS / CATS
+        NUM_COLS = ['temperature', 'windSpeed', 'humidity', 'hourlyRainfall']
+        CAT_COLS = ['weatherType', 'isHoliday']
+        # EXC_COLS = ['availableSpotNumber', 'totalSpotNumber']
 
-    # 숫자형 변수를 전처리
-    train_set = convert_datetime(train_set)
-    train_set = data_standard_scaling(train_set, NUM_COLS)
-    train_set = convert_binary_vector(train_set, CAT_COLS)   
+        # 숫자형 변수를 전처리
+        train_set = convert_datetime(train_set)
+        train_set = data_standard_scaling(train_set, NUM_COLS)
+        train_set = convert_binary_vector(train_set, CAT_COLS)   
 
-    # 데이터 pid로 나누기 - id 의 유일한 값
-    for p_id in train_set.id.unique():
-        logger.info('Parking ID : {} '.format(p_id))
-        
-        # X, y split
-        X, y = generate_train_data(train_set, p_id)
+        # 데이터 pid로 나누기 - id 의 유일한 값
+        for p_id in train_set.id.unique():
+            logger.info('Parking ID : {} '.format(p_id))
+            
+            # X, y split
+            X, y = generate_train_data(train_set, p_id)
 
-        # 회귀 모델 (선택 or 고정) - 그리디 서치 허용
-        model_list = ['rfr', 'ridge', 'lasso']
-        i = 0
-        for model in model_list:
-            i += 1
-            logger.info('running ... {}/{}'.format(i, len(model_list)))
-            clf = get_estimator(model)
-            grid_model = get_grid_search(clf , model)
-            grid_model.fit(X, y)
-            best_score = grid_model.best_score_
-            best_param = grid_model.best_params_
-            logger.info('Grid Search done. => Model : {}, Best Score : {:.4f}, Best Parameters : {}'\
-                .format(p_id + '_' + model, best_score, best_param))
+            # 회귀 모델 (선택 or 고정) - 그리디 서치 허용
+            model_list = ['rfr', 'ridge', 'lasso']
+            i = 0
+            for model in model_list:
+                i += 1
+                logger.info('running ... {}/{}'.format(i, len(model_list)))
+                clf = get_estimator(model)
+                grid_model = get_grid_search(clf , model)
+                grid_model.fit(X, y)
+                best_score = grid_model.best_score_
+                best_param = grid_model.best_params_
+                logger.info('Grid Search done. => Model : {}, Best Score : {:.4f}, Best Parameters : {}'\
+                    .format(p_id + '_' + model, best_score, best_param))
 
-            # 모델 및 모델 정보 저장
-            model_dir = path_join(['model', str(p_id)]) # model/p_id/
-            create_dir(model_dir)
-            print('model_dir:',model_dir)
-            save_estimator(grid_model, model_dir + "/" + model + '.model')
-            save_estimator_info(estimator=grid_model, 
-                                data=train_set, 
-                                path_=model_dir, 
-                                filename_= model,
-                                score_=best_score, 
-                                params_=best_param)
-            logger.info('Save the trained model done.')
-
-    logger.info('Finish!')
-    return True
+                # 모델 및 모델 정보 저장
+                model_dir = path_join(['model', str(p_id)]) # model/p_id/
+                create_dir(model_dir)
+                save_estimator(grid_model, model_dir + "/" + model + '.model')
+                save_estimator_info(estimator=grid_model, 
+                                    data=train_set, 
+                                    path_=model_dir, 
+                                    filename_= model,
+                                    score_=best_score, 
+                                    params_=best_param)
+                logger.info('Save the trained model done.')
+        return True
+    except Exception as e:
+        return e
 
 
-def parking_model():
+def parking_model(data_path):
     logger.info('Start!')
     print(_SCRIPT_DIR)
     print(_UTILS_DIR)
-    if train_process():
+    if train_process(data_path):
+        logger.info('Finish!')
+        logger.info('')
+
         return True
     else:
+        logger.error(train_process(data_path))
         return False
 
 

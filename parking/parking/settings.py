@@ -154,7 +154,7 @@ LOGGING = {
     
     'formatters': {
         'format1': {
-            'format': '[%(asctime)s | %(levelname)s] %(module)s(%(lineno)sline) - %(name)s : %(message)s',
+            'format': '[%(asctime)s | %(levelname)s] %(module)s(%(lineno)sline) : %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S'
             },
         'format2': {
@@ -167,7 +167,7 @@ LOGGING = {
         'main_console':{
             'level':'INFO',
             'class':'logging.StreamHandler',
-            'formatter': 'format2',
+            'formatter': 'format1',
         },
         'sub_console':{
             'level':'INFO',
@@ -190,7 +190,7 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True
         },
-        'collect_log': {'level':'DEBUG', 'handlers': ['sub_console', 'file']},
+        'collect_log': {'level':'DEBUG', 'handlers': ['sub_console', 'file'], 'propagate':0},
         # 'collect_log_helper': {'level':'DEBUG', 'handlers': ['sub_console', 'file'], 'propagate':0},
     }
 }

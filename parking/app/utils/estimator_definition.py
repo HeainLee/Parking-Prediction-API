@@ -24,6 +24,7 @@ def get_estimator(estimator):
 def get_grid_search(clf, estimator):
     return GridSearchCV(estimator=clf, param_grid=PARAM_GRID[estimator], cv=5)
 
+
 def get_grid_search(clf, model):
     kfold = KFold(n_splits=2, shuffle=True, random_state=1)
     grid_model = GridSearchCV(estimator=clf, 

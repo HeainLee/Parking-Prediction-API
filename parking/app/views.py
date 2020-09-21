@@ -11,6 +11,7 @@ from apscheduler.schedulers import SchedulerAlreadyRunningError
 
 from .apps import AppConfig
 from .train_model import parking_model
+from .test_model import parking_model_test
 
 
 def job_function():
@@ -53,7 +54,7 @@ class ParkingModelView(APIView):
                     return Response(final_result, status=status.HTTP_200_OK)
 
                 elif filename.endswith('.model'):
-                    return Response('모델조회불가', status=status.HTTP_400_BAD_REQUEST)
+                    return Response('model file cannot be retrieved', status=status.HTTP_400_BAD_REQUEST)
                     
             else:
                 query_key = ["dirname", "filename"]
@@ -77,8 +78,24 @@ class ParkingModelView(APIView):
                         get_info['files'] = filenames
                         get_infos[dir_name] = get_info
 
+                # 모델과 모델정보 별 재정렬
+                sort_final_dict = {}
+                for p_id, files in get_infos.items():
+                    sort_dict = {}
+                    model_file_list = []
+                    model_info_file_list = []
+                    for file in files['files']:
+                        file_name, file_ext = file.split('.') # "lasso.txt"   
+                        if file_ext == 'model':
+                            model_file_list.append(file)        
+                        elif file_ext == 'txt':
+                            model_info_file_list.append(file)
+                    sort_dict['model_files'] = model_file_list
+                    sort_dict['model_infos'] = model_info_file_list
+                    sort_final_dict[p_id] = sort_dict
+
                 # get_infos = sorted(get_infos.items())
-                result_['result'] = get_infos
+                result_['result'] = sort_final_dict
                 return Response(result_, status=status.HTTP_200_OK)
 
         except FileNotFoundError as e:
@@ -96,16 +113,24 @@ class ParkingModelView(APIView):
     # 주차장 모델 생성
     def post(self, request):
         # 모델 생성하고 결과 반환
-        # TODO 모델 생성 클래스 
-        result = parking_model()
+        # TODO 모델 생성 함수 정리
+        data_path = request.data["data_path"]
+        result = parking_model(data_path)
         result = True
         if result:
-            return Response('모델이 생성을 요청했습니다.', status=status.HTTP_200_OK)
+            return Response('Create model done', status=status.HTTP_200_OK)
         else:
-            return Response('모델 생성에 실패했습니다.', status=status.HTTP_400_BAD_REQUEST)
+            return Response('Create model fail', status=status.HTTP_400_BAD_REQUEST)
 
 
 class ParkingModelDetailView(APIView):
+    def get(self, request, pk):
+        # 임시 API : 모델 테스트 결과 -> 전체 주차면적 중 가능면적 비율(%)
+        # 나중에 oneM2M 업데이트하는 것으로 코드 변경! (블락별 업데이트? 한꺼번에 업데이트?)
+        data_path = request.data["data_path"]
+        model_name = request.data["model_name"]
+        result = parking_model_test(data_path, model_name)
+        return Response('result')
 
     def patch(self, request, pk):
         from apscheduler.jobstores.base import ConflictingIdError

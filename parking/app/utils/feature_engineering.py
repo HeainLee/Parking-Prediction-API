@@ -3,14 +3,17 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from pandas.api.types import CategoricalDtype
 
+
 WEEKS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 HOURS = [x for x in range(1, 25)]
+
 
 def data_standard_scaling(data_set, cols):
     SCALER = StandardScaler()
     scaled_data = SCALER.fit_transform(data_set[cols].astype(float))
     data_set[cols] = scaled_data
     return data_set
+
 
 def convert_binary_vector(data_set, cols):
 
@@ -25,6 +28,7 @@ def convert_binary_vector(data_set, cols):
     for col in cols:       
         data_set = _one_hot_encoding(data_set, col)        
     return data_set
+
 
 def convert_datetime(data_set):
     # datetime 컬럼을 요일/시간으로 변환
