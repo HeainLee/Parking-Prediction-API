@@ -1,0 +1,4 @@
+[core]
+    remote = data
+['remote "data"']
+    url = /Users/heain/parking_prediction_api/dvc-data-remote
