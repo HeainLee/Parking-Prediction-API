@@ -22,3 +22,6 @@ celery-worker-dasolution.log
 /nohup.out
 parking-congestion-prediction-master/
 sample_code/
+logfile.log
+세미나자료_*
+/data
