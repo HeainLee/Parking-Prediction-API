@@ -18,7 +18,7 @@ from estimator_definition import get_estimator, get_grid_search
 logger = logging.getLogger("collect_log")
 
 
-def _print_train_info(data_set):
+def _print_test_info(data_set):
     columns_ = data_set.columns.values
     logger.debug(data_set.head())
     logger.debug('X : {}'.format(columns_[1:-1]))
@@ -48,7 +48,7 @@ def test_process(data_path, model_name):
             # 테스트 X columns
             X, total_spot_num = generate_test_data(test_set, p_id)
 
-            # 회귀 모델 (선택 or 고정) - 그리디 서치 허용
+            # 모델 다운로드 / 주차면적 예측 / 예측결과 변환
             clf = load_estimator(model_name, p_id)
             logger.info('Load the Model [{}] for {} done.'.format(model_name, p_id))
             logger.info('모델 베스트 스코어 {}'.format(clf.best_score_))
@@ -81,4 +81,67 @@ def parking_model_test(data_path, model_name):
         return False
 
 
+def oneM2M_update(data_path, model_name):
+    import requests
+    import json
+    # 모델의 예측 결과(주차가능면적) 생성
+    result = parking_model_test(data_path, model_name)
+    if result:
+        print('결과생성 성공!')
+    else:
+        print('결과생성 실패!')
+
+    # oneM2M platform and API settings
+    url_local = 'http://localhost:7599/wdc_base/test/block1'
+    url_keti = 'http://203.253.128.179:7599/wdc_base/test/block1'
+    headers = {'Content-Type': 'application/json', 'X-M2M-Origin': 'SM', 'X-M2M-RI': '1234'}
+
+    # data 
+    congestionPrediction = [
+        {
+            "index": 12,
+            "predictedFor": "20200813T092500"
+        },
+        {
+            "index": 12,
+            "predictedFor": "20200813T093010"
+        }
+    ]
+    # data structure will be updated, this is for test
+    data = {
+        'sc:parkingBlock': {
+            'congestionPrediction': congestionPrediction}
+    }
+
+    resp = requests.put(url_keti, headers=headers, data=json.dumps(data))
+    if resp.status_code == 200:
+        return True
+    else:
+        return False
+
+
+def oneM2M_update_fake():
+    import requests
+    url_keti = "http://10.1.1.61:8002/analyticsModule/algorithm/1"
+    resp = requests.get(url_keti)
+    if resp.status_code == 200:
+        return True
+    else:
+        return False
+
+
+def model_patch_apscheduler(data_path, model_name, batch_id="1"):
+    try:
+        from .apps import AppConfig
+        get_scheduler = AppConfig.dj_scheduler
+        get_scheduler.add_job(oneM2M_update,
+                              'interval',
+                              minutes=2,
+                              id=str(batch_id),
+                              args=[data_path, model_name]
+                              )
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
