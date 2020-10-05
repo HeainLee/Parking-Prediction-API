@@ -34,7 +34,7 @@ curl -d '{"data_path":"home/path/data/trainData.json}' \
 #### Batch(Test) step
 
 ```bash
-curl -d '{"data_path":"home/path/data/trainData.json, "filename":"rfr"}' \
+curl -d '{"data_path":"home/path/data/testData.json, "model_name":"rfr"}' \
 -H "Content-Type: application/json" \
 -X POST http://[host ip]:8000/parking/batch
 ```
@@ -48,10 +48,10 @@ curl -d '{"data_path":"home/path/data/trainData.json, "filename":"rfr"}' \
 1-1.  **API URI 맵**
 
 | **기능구분**	| **HTTP 메서드**| **URI**    		  | **출력포맷**  | **설명**              | **파라미터**                            |
-|------ ----|--------------|------------------|-------------|---------------------|---------------------------------------|
+|----------|--------------|------------------|-------------|---------------------|---------------------------------------|
 | 모델 관리   | POST			     | /parking/model   | json        | 모델 생성             |data_path=[데이터경로]                    |
 |           | GET 			   | /parking/model   | json        | 학습된 모델 조회        |                                       |
-|           | GET 			   | /parking/model   | json        | 학습된 모델 상세 조회   	|p_id=[주차장ID], filename=[모델정보파일]     |
+|           | GET 			   | /parking/model   | json        | 학습된 모델 상세 조회   	|p_id=[주차장ID], file_name=[모델정보파일]     |
 | 배치 관리   | POST		       | /parking/batch   | json        | 배치 실행		     		 	|data_path=[데이터경로], model_name=[모델이름]}|
 |           | GET		       | /parking/batch   | json        | 배치 상태 확인  				|                                        |
 
