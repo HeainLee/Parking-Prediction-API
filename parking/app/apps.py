@@ -6,21 +6,24 @@ from . import scheduler
 
 
 class AppConfig(AppConfig):
-    # logging.basicConfig()
-    logging.getLogger('').setLevel(logging.INFO)
+    logger = logging.getLogger('apps')
+    logger.setLevel(logging.INFO)
+
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(scheduler.formatter)
+    logger.addHandler(stream_handler)
 
     name = 'app'
-    logging.info(f'    > SCHEDULER_AUTOSTART: {settings.SCHEDULER_AUTOSTART}')
-    logging.info(f"    > scheduler.scheduler: {scheduler.scheduler}")
+    logger.info(f'SCHEDULER_AUTOSTART: {settings.SCHEDULER_AUTOSTART}')
+    logger.info(f"Scheculer Name: {type(scheduler.scheduler).__name__}")
     # <apscheduler.schedulers.background.BackgroundScheduler object at 0x123b5fe80>
-    logging.info(f"    > running?: {scheduler.scheduler.running}", ) # -> False
+    logger.debug(f"Is Scheculer Running?: {scheduler.scheduler.running}", ) # -> False
 
     batch = scheduler.MyBatches()
-    logging.info(f'    > batch: {batch}')
+    # logger.info(f'batch: {type(batch).__name__}, {batch}')
     # ['add_batch', 'job_function', 'kill_scheduler', 'start']
     if settings.SCHEDULER_AUTOSTART:
         batch.start()
-
-    logging.info(f"    > running?: {scheduler.scheduler.running}") # -> True
+    logger.info(f"Is Scheculer Running?: {scheduler.scheduler.running}") # -> True
     # view 에서 dj_scheduler를 받아서 add_job 또는 remove_job을 시행
     dj_scheduler = scheduler.scheduler
