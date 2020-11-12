@@ -20,8 +20,21 @@ celery-worker-dasolution.log
 
 # 로컬 개발 관련 폴더
 /nohup.out
+db.sqlite3
 parking-congestion-prediction-master/
 sample_code/
 logfile.log
+batch_log.json
+test_djscheduler.py
 세미나자료_*
+real_*
+
+# 데이터
+/data_online
 /data
+
+# API 
+PostmanAPI
+
+# 문서
+기타문서

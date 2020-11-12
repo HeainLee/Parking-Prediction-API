@@ -160,7 +160,10 @@ LOGGING = {
         'format2': {
             'format': '[%(asctime)s %(levelname)s] %(message)s',
             'datefmt': '%Y-%m-%d %H:%M:%S'
-            }
+            },
+        'format3': {
+            'format': '%(message)s',            
+            },
         },
 
     'handlers': {
@@ -183,6 +186,15 @@ LOGGING = {
             'backupCount': 10,              # 로그 파일을 최대 10개까지 유지
             'formatter': 'format2',
         },
+        'file2': {
+            # maxBytes * backupCount 용량 이상의 로그가 쌓일경우, 오래된 것부터 삭제
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'log/batch_log.json'), # 로그 저장할 파일명
+            'maxBytes': 1024 * 1024 * 10,   # 로그 파일 당 10M 까지
+            'backupCount': 10,              # 로그 파일을 최대 10개까지 유지
+            'formatter': 'format3',
+        },
     },
     'loggers': {
         'django': {
@@ -191,6 +203,6 @@ LOGGING = {
             'propagate': True
         },
         'collect_log': {'level':'DEBUG', 'handlers': ['sub_console', 'file'], 'propagate':0},
-        # 'collect_log_helper': {'level':'DEBUG', 'handlers': ['sub_console', 'file'], 'propagate':0},
+        'collect_log_batch': {'level':'DEBUG', 'handlers': ['file2'], 'propagate':0},
     }
 }
